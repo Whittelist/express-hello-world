@@ -1,61 +1,37 @@
 const express = require("express");
+const { MongoClient } = require("mongodb");
+const cors = require("cors");
+
 const app = express();
-const port = process.env.PORT || 3001;
+app.use(cors());
 
-app.get("/", (req, res) => res.type('html').send(html));
+// Leer las variables de entorno desde Render
+const uri = process.env.MONGO_URI;
+const dbName = process.env.DB_NAME;
 
-const server = app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+// Inicializar cliente de Mongo
+const client = new MongoClient(uri);
 
-server.keepAliveTimeout = 120 * 1000;
-server.headersTimeout = 120 * 1000;
+// Ruta principal de prueba
+app.get("/", (req, res) => {
+  res.send("API funcionando 🚀");
+});
 
-const html = `
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Hello from Render!</title>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-    <script>
-      setTimeout(() => {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          disableForReducedMotion: true
-        });
-      }, 500);
-    </script>
-    <style>
-      @import url("https://p.typekit.net/p.css?s=1&k=vnd5zic&ht=tk&f=39475.39476.39477.39478.39479.39480.39481.39482&a=18673890&app=typekit&e=css");
-      @font-face {
-        font-family: "neo-sans";
-        src: url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("woff2"), url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("woff"), url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("opentype");
-        font-style: normal;
-        font-weight: 700;
-      }
-      html {
-        font-family: neo-sans;
-        font-weight: 700;
-        font-size: calc(62rem / 16);
-      }
-      body {
-        background: white;
-      }
-      section {
-        border-radius: 1em;
-        padding: 1em;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        margin-right: -50%;
-        transform: translate(-50%, -50%);
-      }
-    </style>
-  </head>
-  <body>
-    <section>
-      Hello from Render!
-    </section>
-  </body>
-</html>
-`
+// Ruta real para tu frontend
+app.get("/api/empresas", async (req, res) => {
+  try {
+    await client.connect();
+    const db = client.db(dbName);
+    const collection = db.collection("comments"); // cambia aquí si usas otra colección
+    const resultados = await collection.find({}).limit(20).toArray();
+    res.json(resultados);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error al conectar con la base de datos");
+  }
+});
+
+// Iniciar servidor
+app.listen(3000, () => {
+  console.log("Servidor corriendo en puerto 3000");
+});
