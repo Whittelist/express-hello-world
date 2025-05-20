@@ -18,7 +18,7 @@ app.get("/api/empresas", async (req, res) => {
   try {
     await client.connect();
     const db = client.db(dbName);
-    const collection = db.collection("comments"); // o la colección real
+    const collection = db.collection("empresas");// o la colección real
     const resultados = await collection.find({}).limit(20).toArray();
     res.json(resultados);
   } catch (err) {
