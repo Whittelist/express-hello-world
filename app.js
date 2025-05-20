@@ -23,10 +23,11 @@ app.get("/api/empresas", async (req, res) => {
     res.json(resultados);
   } catch (err) {
     console.error(err);
-    res.status(500).send(\"Error al conectar con MongoDB\");
+    res.status(500).send("Error al conectar con MongoDB");
   }
 });
 
 app.listen(3000, () => {
-  console.log(\"Servidor corriendo en puerto 3000\");
+  console.log("Servidor corriendo en puerto 3000");
+
 });
