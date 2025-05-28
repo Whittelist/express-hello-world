@@ -45,25 +45,33 @@ app.get("/api/buscar", async (req, res) => {
   const busqueda = req.query.q?.trim();
   if (!busqueda) return res.json([]);
 
-  // Espera el modelo cargado
   if (!modeloIA) return res.status(503).json({ error: "Modelo IA no listo" });
 
   try {
     await client.connect();
     const db = client.db(dbName);
     const collection = db.collection("empresas");
-    const empresas = await collection.find({}).limit(100).toArray();
+    // Solo lee los embeddings ya precalculados
+    const empresas = await collection.find({ embedding: { $exists: true } }).toArray();
 
-    // Prepara textos y saca embeddings
-    const textos = empresas.map(e => e.text || "");
-    const embeddingsEmpresas = await modeloIA.embed(textos);
+    // Calcula solo el embedding de la búsqueda
     const embeddingBusqueda = await modeloIA.embed([busqueda]);
-    const sim = await tf.matMul(embeddingsEmpresas, embeddingBusqueda, false, true).array();
+    const embeddingArr = embeddingBusqueda.arraySync()[0];
 
-    // Calcula score, ordena y filtra
-    const puntuaciones = sim.map((s, i) => ({
-      ...empresas[i],
-      score: s[0]
+    // Calcula similitud coseno (manual)
+    function dot(a, b) {
+      return a.reduce((sum, v, i) => sum + v * b[i], 0);
+    }
+    function norm(a) {
+      return Math.sqrt(dot(a, a));
+    }
+    function cosineSimilarity(a, b) {
+      return dot(a, b) / (norm(a) * norm(b));
+    }
+
+    const puntuaciones = empresas.map(e => ({
+      ...e,
+      score: cosineSimilarity(e.embedding, embeddingArr)
     }));
 
     const ordenadas = puntuaciones
@@ -77,6 +85,7 @@ app.get("/api/buscar", async (req, res) => {
     res.status(500).send("Error en búsqueda IA");
   }
 });
+
 
 
 app.listen(3000, () => {
