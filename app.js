@@ -26,8 +26,15 @@ use.load().then(modelo => {
 // Al principio de tu app.js, después de cargar modeloIA:
 async function calcularYGuardarEmbedding(empresa) {
   if (!modeloIA) throw new Error("Modelo IA no cargado");
-  const texto = [empresa.name, empresa.text, (empresa.tags||[]).join(', '), empresa.categoria].join(' ');
-  const embTensor = await modeloIA.embed([texto]);
+  const textoEmpresa = [
+    empresa.name, 
+    empresa.text, 
+    (empresa.tags || []).join(', '), 
+    empresa.categoria, 
+    empresa.url
+  ].filter(Boolean).join(' ');
+
+  const embTensor = await modeloIA.embed([textoEmpresa]);
   const embArray = embTensor.arraySync()[0];
   return embArray;
 }
