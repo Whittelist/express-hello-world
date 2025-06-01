@@ -23,6 +23,35 @@ use.load().then(modelo => {
   console.log('Modelo IA cargado');
 });
 
+// Al principio de tu app.js, después de cargar modeloIA:
+async function calcularYGuardarEmbedding(empresa) {
+  if (!modeloIA) throw new Error("Modelo IA no cargado");
+  const texto = [empresa.name, empresa.text, (empresa.tags||[]).join(', '), empresa.categoria].join(' ');
+  const embTensor = await modeloIA.embed([texto]);
+  const embArray = embTensor.arraySync()[0];
+  return embArray;
+}
+
+// Ejemplo de uso al insertar una empresa nueva:
+app.post("/api/empresas", async (req, res) => {
+  try {
+    await client.connect();
+    const db = client.db(dbName);
+    const col = db.collection("empresas");
+    const nuevaEmpresa = req.body;
+    // Solo calcula embedding si no existe
+    if (!nuevaEmpresa.embedding) {
+      nuevaEmpresa.embedding = await calcularYGuardarEmbedding(nuevaEmpresa);
+    }
+    const resultado = await col.insertOne(nuevaEmpresa);
+    res.json(resultado);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error insertando empresa");
+  }
+});
+
+
 
 app.get("/", (req, res) => {
   res.send("API funcionando 🚀");
